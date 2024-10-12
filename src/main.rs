@@ -1,9 +1,11 @@
+mod board;
 mod ui;
 
 use bevy::{
 	input::common_conditions::input_toggle_active, prelude::*, render::camera::ScalingMode,
 };
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use board::BoardPlugin;
 use ui::*;
 
 fn main() {
@@ -22,17 +24,13 @@ fn main() {
 		.add_plugins(
 			WorldInspectorPlugin::default().run_if(input_toggle_active(true, KeyCode::Escape)),
 		)
-		.add_plugins((GameUI,))
+		.add_plugins((GameUI, BoardPlugin))
+		.add_systems(Startup, setup)
 		.run();
 }
 
 fn setup(mut commands: Commands) {
 	let mut camera = Camera2dBundle::default();
-
-	camera.projection.scaling_mode = ScalingMode::AutoMin {
-		min_width: 256.0,
-		min_height: 144.0,
-	};
-
+	camera.projection.scaling_mode = ScalingMode::FixedVertical(1.0);
 	commands.spawn(camera);
 }
