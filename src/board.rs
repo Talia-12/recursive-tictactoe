@@ -3,7 +3,7 @@ use bevy::prelude::*;
 pub struct BoardPlugin;
 
 const MAX_LEVEL: u8 = 0;
-const MAX_BOARD_SIZE: f32 = 0.92;
+const MAX_BOARD_SIZE: f32 = 0.96;
 
 impl Plugin for BoardPlugin {
 	fn build(&self, app: &mut App) {
@@ -119,7 +119,7 @@ fn spawn_board(builder: &mut ChildBuilder, level: u8, offset: Vec2, board_border
 						builder.spawn((
 							SpriteBundle {
 								sprite: Sprite {
-									custom_size: Some(Vec2::new(1.0, 1.0)),
+									custom_size: Some(Vec2::new(0.75, 0.75)),
 									..default()
 								},
 								transform: Transform {

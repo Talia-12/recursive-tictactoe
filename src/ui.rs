@@ -9,6 +9,8 @@ impl Plugin for GameUI {
 }
 
 fn spawn_game_ui(mut commands: Commands) {
+	return;
+
 	commands
 		.spawn((
 			NodeBundle {

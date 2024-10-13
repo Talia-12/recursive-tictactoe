@@ -12,7 +12,7 @@ fn main() {
 	App::new()
 		.add_plugins(
 			DefaultPlugins
-				.set(ImagePlugin::default_nearest())
+				// .set(ImagePlugin::default_nearest())
 				.set(WindowPlugin {
 					primary_window: Some(Window {
 						title: "Recursive TicTacToe".into(),
@@ -21,6 +21,7 @@ fn main() {
 					..default()
 				}),
 		)
+		.insert_resource(ClearColor(Color::WHITE))
 		.add_plugins(
 			WorldInspectorPlugin::default().run_if(input_toggle_active(true, KeyCode::Escape)),
 		)
