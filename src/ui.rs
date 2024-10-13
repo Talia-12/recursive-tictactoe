@@ -9,8 +9,6 @@ impl Plugin for GameUI {
 }
 
 fn spawn_game_ui(mut commands: Commands) {
-	return;
-
 	commands
 		.spawn((
 			NodeBundle {
@@ -26,7 +24,8 @@ fn spawn_game_ui(mut commands: Commands) {
 			},
 			Name::new("UI Root"),
 		))
-		.with_children(|builder| {
+		.with_children(|_builder| {
 			// TODO
+			todo!()
 		});
 }

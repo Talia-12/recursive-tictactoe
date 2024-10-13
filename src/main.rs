@@ -6,7 +6,6 @@ use bevy::{
 };
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use board::BoardPlugin;
-use ui::*;
 
 fn main() {
 	App::new()
@@ -25,7 +24,7 @@ fn main() {
 		.add_plugins(
 			WorldInspectorPlugin::default().run_if(input_toggle_active(true, KeyCode::Escape)),
 		)
-		.add_plugins((GameUI, BoardPlugin))
+		.add_plugins((BoardPlugin,))
 		.add_systems(Startup, setup)
 		.run();
 }

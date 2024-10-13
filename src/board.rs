@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_mod_picking::prelude::*;
 
 pub struct BoardPlugin;
 
@@ -8,8 +9,9 @@ const MAX_BOARD_SIZE: f32 = 0.96;
 impl Plugin for BoardPlugin {
 	fn build(&self, app: &mut App) {
 		app.init_resource::<BoardSprites>()
+			.add_plugins(DefaultPickingPlugins)
 			.add_systems(Startup, spawn_full_board)
-			.add_systems(Update, render_board);
+			.add_systems(Update, render_tiles);
 	}
 }
 
@@ -40,13 +42,10 @@ impl FromWorld for BoardSprites {
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-pub enum Board {
-	ParentBoard,
-	LeafBoard { tiles: [BoardState; 9] },
-}
+pub struct Board;
 
 #[derive(Reflect, Clone, Copy, PartialEq, Eq)]
-pub enum BoardState {
+pub enum TileState {
 	Empty,
 	Cross,
 	Circle,
@@ -54,7 +53,9 @@ pub enum BoardState {
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-pub struct LeafTile;
+pub struct Tile {
+	state: TileState,
+}
 
 fn spawn_full_board(mut commands: Commands, board_sprites: Res<BoardSprites>) {
 	commands
@@ -67,7 +68,7 @@ fn spawn_full_board(mut commands: Commands, board_sprites: Res<BoardSprites>) {
 				texture: board_sprites.board_border.clone(),
 				..default()
 			},
-			Board::ParentBoard,
+			Board,
 			Name::new("Root Board"),
 		))
 		.with_children(|builder| {
@@ -103,9 +104,7 @@ fn spawn_board(builder: &mut ChildBuilder, level: u8, offset: Vec2, board_border
 					},
 					..default()
 				},
-				Board::LeafBoard {
-					tiles: [BoardState::Empty; 9],
-				},
+				Board,
 				Name::new("Leaf Board"),
 			))
 			.with_children(|builder| {
@@ -129,8 +128,12 @@ fn spawn_board(builder: &mut ChildBuilder, level: u8, offset: Vec2, board_border
 								},
 								..default()
 							},
-							LeafTile,
-							Name::new("Leaf Tile"),
+							PickableBundle::default(),
+							On::<Pointer<Click>>::run(tile_clicked),
+							Tile {
+								state: TileState::Empty,
+							},
+							Name::new("Tile"),
 						));
 					}
 				}
@@ -153,7 +156,7 @@ fn spawn_board(builder: &mut ChildBuilder, level: u8, offset: Vec2, board_border
 				},
 				..default()
 			},
-			Board::ParentBoard,
+			Board,
 			Name::new("Parent Board"),
 		))
 		.with_children(|builder| {
@@ -170,38 +173,30 @@ fn spawn_board(builder: &mut ChildBuilder, level: u8, offset: Vec2, board_border
 		});
 }
 
-fn render_board(
-	mut leaf_tiles: Query<(Entity, &mut Handle<Image>, &Parent), With<LeafTile>>,
-	boards: Query<(&Board, &Children)>,
-	board_sprites: Res<BoardSprites>,
-) {
-	for (entity, mut sprite, parent) in &mut leaf_tiles {
-		let (parent_board, children) = boards
-			.get(parent.get())
-			.unwrap_or_else(|_| panic!("A leaftile without a parent board happened"));
-
-		match parent_board {
-			Board::ParentBoard => panic!("A leaftile whose parent is a parentboard was found"),
-			Board::LeafBoard { tiles } => {
-				let index = children
-					.iter()
-					.position(|child| entity == *child)
-					.unwrap_or_else(|| {
-						panic!("None of the children of the leaftile's parent are the leaftile.")
-					});
-
-				match tiles[index] {
-					BoardState::Empty => sprite
-						.set(Box::new(board_sprites.empty.clone()))
-						.expect("Setting the texture of the leaftile failed."),
-					BoardState::Cross => sprite
-						.set(Box::new(board_sprites.cross.clone()))
-						.expect("Setting the texture of the leaftile failed."),
-					BoardState::Circle => sprite
-						.set(Box::new(board_sprites.circle.clone()))
-						.expect("Setting the texture of the leaftile failed."),
-				}
-			}
+fn render_tiles(mut tiles: Query<(&mut Handle<Image>, &Tile)>, board_sprites: Res<BoardSprites>) {
+	for (mut sprite, tile) in &mut tiles {
+		match tile.state {
+			TileState::Empty => sprite
+				.set(Box::new(board_sprites.empty.clone()))
+				.expect("Setting the texture of the leaftile failed."),
+			TileState::Cross => sprite
+				.set(Box::new(board_sprites.cross.clone()))
+				.expect("Setting the texture of the leaftile failed."),
+			TileState::Circle => sprite
+				.set(Box::new(board_sprites.circle.clone()))
+				.expect("Setting the texture of the leaftile failed."),
 		}
+	}
+}
+
+/// Called by an event listener when a leaf tile is clicked, cycle its state.
+fn tile_clicked(event: Listener<Pointer<Click>>, mut tiles: Query<&mut Tile>) {
+	let mut tile = tiles.get_mut(event.target).unwrap();
+	let old_state = tile.state;
+
+	tile.state = match old_state {
+		TileState::Empty => TileState::Cross,
+		TileState::Cross => TileState::Circle,
+		TileState::Circle => TileState::Empty,
 	}
 }
